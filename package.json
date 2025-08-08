@@ -1,0 +1,39 @@
+{
+  "name": "commiter",
+  "version": "1.0.0",
+  "description": "VS Code extension and CLI tool for generating git commit messages and committing changes via the git CLI.",
+  "main": "dist/extension.js",
+  "bin": {
+    "commiter": "dist/cli.js"
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "build": "npm run compile",
+    "watch": "tsc -w -p ."
+  },
+  "publisher": "anonymous",
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "activationEvents": [
+    "onCommand:commiter.generateCommit"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "commiter.generateCommit",
+        "title": "Commiter: Generate Git Commit"
+      }
+    ]
+  },
+  "dependencies": {
+    "@types/node": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.50.0",
+    "typescript": "^5.2.2"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
