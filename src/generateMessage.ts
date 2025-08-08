@@ -14,6 +14,7 @@ export async function generateCommitMessage(apiKey: string, model: string, maxTo
     }
 
     console.log('Calling OpenAI API...');
+    console.log(`Using maxTokens: ${maxTokens}`);
     const openai = new OpenAI({ apiKey });
     const body: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
       model,
@@ -28,6 +29,7 @@ ${diff}`
       }],
       max_tokens: maxTokens,
       max_completion_tokens: maxTokens,
+      reasoning_effort: 'low',
       n: 1,
       temperature: 0.2
     }
@@ -48,12 +50,12 @@ ${diff}`
 
     const content = response.choices[0]?.message?.content?.trim();
     console.log('OpenAI API response object:', JSON.stringify(response, null, 2));
-    
+
     if (!content || content === '') {
       console.log('Empty content received, using fallback');
       return generateCommitMessageSync();
     }
-    
+
     console.log('OpenAI generated message:', content);
     return content;
   } catch (err) {

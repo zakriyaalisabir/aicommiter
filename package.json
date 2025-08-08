@@ -22,7 +22,8 @@
   },
   "activationEvents": [
     "onCommand:commiter.generateCommit",
-    "onCommand:commiter.showConfig"
+    "onCommand:commiter.showConfig",
+    "onCommand:commiter.configure"
   ],
   "contributes": {
     "commands": [
@@ -33,6 +34,10 @@
       {
         "command": "commiter.showConfig",
         "title": "Commiter: Show Config"
+      },
+      {
+        "command": "commiter.configure",
+        "title": "Commiter: Configure"
       }
     ]
   },

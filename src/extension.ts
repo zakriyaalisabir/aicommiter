@@ -119,7 +119,32 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage(showConfig());
   });
   
-  context.subscriptions.push(generateCommitDisposable, showConfigDisposable);
+  const configureDisposable = vscode.commands.registerCommand('commiter.configure', async () => {
+    const apiKey = await vscode.window.showInputBox({
+      prompt: 'Enter OpenAI API Key',
+      password: true,
+      value: getApiKey()
+    });
+    if (apiKey) setApiKey(apiKey);
+    
+    const model = await vscode.window.showQuickPick([
+      'gpt-4o-mini',
+      'gpt-4o',
+      'gpt-3.5-turbo',
+      'gpt-5-nano'
+    ], { placeHolder: 'Select OpenAI model' });
+    if (model) setModel(model);
+    
+    const tokensInput = await vscode.window.showInputBox({
+      prompt: 'Enter max tokens',
+      value: getMaxTokens()?.toString() || '150'
+    });
+    if (tokensInput) setMaxTokens(parseInt(tokensInput) || 150);
+    
+    vscode.window.showInformationMessage('Configuration updated!');
+  });
+  
+  context.subscriptions.push(generateCommitDisposable, showConfigDisposable, configureDisposable);
 }
 
 export function deactivate() {}

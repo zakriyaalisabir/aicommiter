@@ -4,15 +4,12 @@ import { generateCommitMessage, generateCommitMessageSync } from './generateMess
 import * as readline from 'readline';
 import { getApiKey, getModel, setApiKey, setModel, showConfig, getMaxTokens, setMaxTokens } from './config';
 
-/**
- * Parse command line arguments for our CLI. Returns an options object.
- */
-function parseArgs(): {
+async function parseArgs(): Promise<{
   message?: string;
   maxFiles: number;
   addAll: boolean;
   push: boolean;
-} {
+}> {
   const args = process.argv.slice(2);
   let message: string | undefined;
   let maxFiles = 5;
@@ -39,6 +36,9 @@ function parseArgs(): {
       case '--config':
         console.log(showConfig());
         process.exit(0);
+      case '--configure':
+        await configure();
+        process.exit(0);
       case '-h':
       case '--help':
         printHelp();
@@ -56,12 +56,26 @@ function printHelp() {
     `  --add                  Stage all changes before committing\n` +
     `  --push                 Push the commit to the current branch after committing\n` +
     `  --config               Show current configuration\n` +
+    `  --configure            Configure API key, model, and max tokens\n` +
     `  -h, --help             Show this help message\n`);
 }
 
 function prompt(question: string): Promise<string> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise(resolve => rl.question(question, answer => { rl.close(); resolve(answer); }));
+}
+
+async function configure(): Promise<void> {
+  const apiKey = await prompt(`Enter OpenAI API Key (current: ${getApiKey() ? '***' + getApiKey()!.slice(-4) : 'Not set'}): `);
+  if (apiKey.trim()) setApiKey(apiKey);
+
+  const model = await prompt(`Enter model (current: ${getModel() || 'Not set'}): `);
+  if (model.trim()) setModel(model);
+
+  const tokens = await prompt(`Enter max tokens (current: ${getMaxTokens() || 'Not set'}): `);
+  if (tokens.trim()) setMaxTokens(parseInt(tokens) || 150);
+
+  console.log('Configuration updated!');
 }
 
 function hasStagedFiles(): boolean {
@@ -75,8 +89,8 @@ function getStagedFilesList(): string[] {
 }
 
 async function run(): Promise<void> {
-  const options = parseArgs();
-  
+  const options = await parseArgs();
+
   if (options.addAll) {
     const add = spawnSync('git', ['add', '-A'], { stdio: 'inherit' });
     if (add.status !== 0) process.exit(add.status || 1);
@@ -106,20 +120,20 @@ async function run(): Promise<void> {
       apiKey = await prompt('Enter OpenAI API Key (will be saved): ');
       if (apiKey) setApiKey(apiKey);
     }
-    
+
     let model = getModel();
     if (!model) {
       model = await prompt('Enter model (gpt-4o-mini/gpt-4o/gpt-3.5-turbo): ');
       if (model) setModel(model);
     }
-    
+
     let maxTokens = getMaxTokens();
     if (!maxTokens) {
       const tokensInput = await prompt('Enter max tokens (e.g., 150): ');
       maxTokens = parseInt(tokensInput) || 150;
       setMaxTokens(maxTokens);
     }
-    
+
     if (apiKey && model) {
       console.log(`Generating commit using ${model}...`);
       try {
