@@ -1,6 +1,13 @@
 # Commiter - AI-Powered Git Commit Tool
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/zakriyaalisabir.aicommiter)](https://marketplace.visualstudio.com/items?itemName=zakriyaalisabir.aicommiter)
+[![Downloads](https://img.shields.io/visual-studio-marketplace/d/zakriyaalisabir.aicommiter)](https://marketplace.visualstudio.com/items?itemName=zakriyaalisabir.aicommiter)
+[![npm version](https://img.shields.io/npm/v/aicommiter)](https://www.npmjs.com/package/aicommiter)
+[![npm downloads](https://img.shields.io/npm/dm/aicommiter)](https://www.npmjs.com/package/aicommiter)
+
 A VS Code extension and CLI tool that generates intelligent git commit messages using OpenAI's GPT models and commits changes automatically.
+
+**🎆 Now available on [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=zakriyaalisabir.aicommiter) and [NPM Registry](https://www.npmjs.com/package/aicommiter)!**
 
 ## ✨ Features
 
@@ -14,26 +21,47 @@ A VS Code extension and CLI tool that generates intelligent git commit messages 
 
 ## 🚀 Installation
 
-### Global CLI + VS Code Extension
+### VS Code Marketplace (Recommended)
+1. Open VS Code → Extensions (`Cmd+Shift+X`)
+2. Search for "**AI Commiter**" by zakriyaalisabir
+3. Click **Install**
+4. **Restart VS Code** after installation
+
+### NPM Registry (Global CLI)
+```bash
+npm install -g aicommiter
+```
+Installs the CLI tool globally from npm registry.
+
+### Local Development
 ```bash
 npm install -g .
 ```
-This installs both the CLI tool and VS Code extension automatically.
+This installs both the CLI tool and VS Code extension from source.
 
-### VS Code Extension Only
+### Manual VSIX Installation
 1. Download `commiter-1.0.0.vsix`
-2. Open VS Code → Extensions → "..." → "Install from VSIX..."
-3. Select the `.vsix` file
+2. Open VS Code → Extensions (`Cmd+Shift+X`)
+3. Click "..." menu → "Install from VSIX..."
+4. Select the `commiter-1.0.0.vsix` file
+5. **Restart VS Code** after installation
+6. Commands are available via Command Palette (`Cmd+Shift+P`)
 
 ## 🎮 Usage
 
 ### VS Code Extension
 
-1. **Click the git commit icon** in the left sidebar
-2. **Use the panel buttons**:
-   - 🚀 **Generate Commit** - Analyze staged files and commit
-   - ⚙️ **Show Config** - View current settings
-   - 🔧 **Configure** - Set API key, model, and tokens
+1. **Open Command Palette** (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. **Type "Commiter"** to see available commands:
+   - **Commiter: Generate Commit** - Analyze staged files and commit
+   - **Commiter: Show Config** - View current settings
+   - **Commiter: Configure** - Set API key, model, and tokens
+
+#### Quick Setup:
+1. Stage your files (`git add <files>`)
+2. Run **Commiter: Generate Commit**
+3. Configure API key and model when prompted
+4. Review and confirm the generated commit message
 
 ### CLI Tool
 
@@ -152,10 +180,13 @@ ISC License - see LICENSE file for details.
 
 ## 🆘 Troubleshooting
 
-### VS Code Extension Not Visible
-- Restart VS Code after installation
-- Check Extensions panel - ensure "commiter" is enabled
-- Try `Ctrl+Shift+P` → "Developer: Reload Window"
+### VS Code Extension Not Working
+- **Restart VS Code** completely after installation
+- Check Extensions panel (`Cmd+Shift+X`) - ensure "AI Commiter" is enabled
+- Try `Cmd+Shift+P` → "Developer: Reload Window"
+- Commands are accessed via Command Palette, not sidebar
+- Ensure you're in a git repository with staged files
+- If installed from Marketplace, updates are automatic
 
 ### Empty Commit Messages
 - Ensure you have a valid OpenAI API key
@@ -163,9 +194,10 @@ ISC License - see LICENSE file for details.
 - Try a different model (gpt-4o-mini is most reliable)
 
 ### CLI Command Not Found
-- Ensure global installation: `npm install -g .`
+- For npm registry: `npm install -g aicommiter`
+- For local development: `npm install -g .`
 - Check your PATH includes npm global binaries
-- Try `npx commiter` as alternative
+- Try `npx aicommiter` as alternative
 
 ---
 

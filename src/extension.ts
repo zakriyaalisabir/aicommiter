@@ -86,8 +86,9 @@ export function activate(context: vscode.ExtensionContext) {
       model = await vscode.window.showQuickPick([
         'gpt-4o-mini',
         'gpt-4o', 
-        'gpt-3.5-turbo'
-      ], { placeHolder: 'Select OpenAI model' });
+        'gpt-3.5-turbo',
+        'gpt-5-nano'
+      ], { placeHolder: 'Select OpenAI model (Make SSure this model is enabled for the provided API key)' });
       if (!model) return;
       setModel(model);
     }
