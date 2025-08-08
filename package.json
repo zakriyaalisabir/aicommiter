@@ -13,7 +13,7 @@
     "package": "vsce package"
   },
 
-  "publisher": "local",
+  "publisher": "Zakriya Ali Sabir",
   "author": "Zakriya Ali Sabir",
   "repository": {
     "type": "git",
