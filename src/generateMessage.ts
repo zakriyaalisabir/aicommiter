@@ -2,14 +2,20 @@ import { spawnSync } from 'child_process';
 import OpenAI from 'openai';
 
 function getGitDiff(): string {
-  const diffResult = spawnSync('git', ['diff', '--cached'], { encoding: 'utf8' });
-  console.log('Git diff command result:');
+  const vscode = require('vscode');
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  
+  const diffResult = spawnSync('git', ['diff', '--cached'], { 
+    encoding: 'utf8',
+    cwd: workspaceFolder 
+  });
+  
+  console.log('Git diff debug:');
+  console.log('- workspace:', workspaceFolder);
   console.log('- stdout length:', diffResult.stdout?.length || 0);
   console.log('- stderr:', diffResult.stderr);
   console.log('- exit code:', diffResult.status);
-  if (diffResult.stdout) {
-    console.log('- first 200 chars:', diffResult.stdout.substring(0, 200));
-  }
+  
   return diffResult.stdout || '';
 }
 
