@@ -6,6 +6,27 @@ function getGitDiff(): string {
   return diffResult.stdout || '';
 }
 
+function logSeparator() {
+  console.log('\n' + '═'.repeat(60));
+}
+
+function logSection(title: string) {
+  console.log(`\n🔹 ${title}`);
+  console.log('─'.repeat(40));
+}
+
+function logSuccess(message: string) {
+  console.log(`✅ ${message}`);
+}
+
+function logError(message: string) {
+  console.log(`❌ ${message}`);
+}
+
+function logInfo(message: string) {
+  console.log(`ℹ️  ${message}`);
+}
+
 export async function generateCommitMessage(apiKey: string, model: string, maxTokens: number = 150): Promise<string> {
   try {
     const diff = getGitDiff();
@@ -13,8 +34,11 @@ export async function generateCommitMessage(apiKey: string, model: string, maxTo
       return 'chore: no staged changes';
     }
 
-    console.log('Calling OpenAI API...');
-    console.log(`Using maxTokens: ${maxTokens}`);
+    logSeparator();
+    logSection('OpenAI API Request');
+    logInfo(`Model: ${model}`);
+    logInfo(`Max Tokens: ${maxTokens}`);
+    
     const openai = new OpenAI({ apiKey });
     const body: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
       model,
@@ -23,9 +47,7 @@ export async function generateCommitMessage(apiKey: string, model: string, maxTo
         content: 'Generate conventional commit messages based on git diffs. Use format: type(scope): description. Types: feat, fix, docs, style, refactor, test, chore. Be concise and descriptive.'
       }, {
         role: 'user',
-        content: `Generate a conventional commit message for these staged changes:
-
-${diff}`
+        content: `Generate a conventional commit message for these staged changes:\n\n${diff}`
       }],
       max_tokens: maxTokens,
       max_completion_tokens: maxTokens,
@@ -35,31 +57,51 @@ ${diff}`
     }
 
     if (model.startsWith('gpt-5')) {
-      delete body.max_tokens; // gpt-5 does not support this field
+      delete body.max_tokens;
+      logInfo('Using gpt-5 optimized settings');
     }
 
     if (model.startsWith('gpt-5-nano')) {
-      body.temperature = 1; // gpt-5-nano uses higher temperature by default
+      body.temperature = 1;
+      logInfo('Using gpt-5-nano optimized settings');
     }
 
     const options: OpenAI.RequestOptions = {
       maxRetries: 3,
     }
+    
+    logInfo('Sending request to OpenAI...');
     const response = await openai.chat.completions.create(body, options);
-    // console.log('OpenAI response:', JSON.stringify(response));
-
+    
+    logSection('OpenAI API Response');
+    const usage = response.usage;
+    if (usage) {
+      logInfo(`Prompt tokens: ${usage.prompt_tokens}`);
+      logInfo(`Completion tokens: ${usage.completion_tokens}`);
+      logInfo(`Total tokens: ${usage.total_tokens}`);
+      if (usage.completion_tokens_details?.reasoning_tokens) {
+        logInfo(`Reasoning tokens: ${usage.completion_tokens_details.reasoning_tokens}`);
+      }
+    }
+    
     const content = response.choices[0]?.message?.content?.trim();
-    // console.log('OpenAI API response object:', JSON.stringify(content, null, 2));
-
+    
     if (!content || content === '') {
-      console.log('Empty content received, using fallback');
+      logError('Empty content received from OpenAI');
+      logInfo('Using fallback commit message generator');
       return generateCommitMessageSync();
     }
-
-    // console.log('OpenAI generated message:', content);
+    
+    logSection('Generated Commit Message');
+    logSuccess(`"${content}"`);
+    logSeparator();
     return content;
   } catch (err) {
-    console.error('OpenAI API error:', err);
+    logSeparator();
+    logError('OpenAI API request failed');
+    console.error('   Error details:', err);
+    logInfo('Using fallback commit message generator');
+    logSeparator();
     return 'chore: auto commit';
   }
 }
