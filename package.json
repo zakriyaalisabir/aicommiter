@@ -1,6 +1,6 @@
 {
   "name": "aicommiter",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "displayName": "AICommiter",
   "description": "VS Code extension and CLI tool for generating git commit messages and committing changes via the git CLI.",
   "categories": [
@@ -11,6 +11,7 @@
     "commiter": "dist/cli.js"
   },
   "scripts": {
+    "tag": "git tag v$(node getPkgVersion.js) && git push origin v$(node getPkgVersion.js)",
     "compile": "tsc -p .",
     "build": "npm run compile",
     "watch": "tsc -w -p .",
