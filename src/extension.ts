@@ -30,36 +30,7 @@ async function getStagedFilesList(): Promise<string[]> {
   });
 }
 
-class CommiterItem extends vscode.TreeItem {
-  constructor(label: string, command: string) {
-    super(label, vscode.TreeItemCollapsibleState.None);
-    this.command = {
-      command: `commiter.${command}`,
-      title: label
-    };
-  }
-}
-
-class CommiterTreeProvider implements vscode.TreeDataProvider<CommiterItem> {
-  getTreeItem(element: CommiterItem): vscode.TreeItem {
-    return element;
-  }
-
-  getChildren(): CommiterItem[] {
-    return [
-      new CommiterItem('🚀 Generate Commit', 'generateCommit'),
-      new CommiterItem('⚙️ Show Config', 'showConfig'),
-      new CommiterItem('🔧 Configure', 'configure')
-    ];
-  }
-}
-
 export function activate(context: vscode.ExtensionContext) {
-  const treeProvider = new CommiterTreeProvider();
-  context.subscriptions.push(
-    vscode.window.createTreeView('commiterView', { treeDataProvider: treeProvider })
-  );
-
   const generateCommitDisposable = vscode.commands.registerCommand('commiter.generateCommit', async () => {
     if (!(await hasStagedFiles())) {
       const choice = await vscode.window.showQuickPick([
@@ -145,7 +116,12 @@ export function activate(context: vscode.ExtensionContext) {
   });
   
   const showConfigDisposable = vscode.commands.registerCommand('commiter.showConfig', () => {
-    vscode.window.showInformationMessage(showConfig());
+    try {
+      const config = showConfig();
+      vscode.window.showInformationMessage(config);
+    } catch (error) {
+      vscode.window.showErrorMessage(`Config error: ${error}`);
+    }
   });
   
   const configureDisposable = vscode.commands.registerCommand('commiter.configure', async () => {

@@ -12,7 +12,8 @@
     "watch": "tsc -w -p .",
     "package": "vsce package"
   },
-  "publisher": "zakriyaalisabir",
+
+  "publisher": "local",
   "author": "Zakriya Ali Sabir",
   "repository": {
     "type": "git",
@@ -22,50 +23,31 @@
     "vscode": "^1.50.0"
   },
   "activationEvents": [
-    "onView:commiterView"
+    "onCommand:commiter.generateCommit",
+    "onCommand:commiter.showConfig",
+    "onCommand:commiter.configure"
   ],
   "contributes": {
     "commands": [
       {
         "command": "commiter.generateCommit",
-        "title": "Generate Commit",
-        "icon": "$(git-commit)"
+        "title": "Commiter: Generate Commit"
       },
       {
         "command": "commiter.showConfig",
-        "title": "Show Config",
-        "icon": "$(gear)"
+        "title": "Commiter: Show Config"
       },
       {
         "command": "commiter.configure",
-        "title": "Configure",
-        "icon": "$(settings)"
+        "title": "Commiter: Configure"
       }
-    ],
-    "views": {
-      "commiter": [
-        {
-          "id": "commiterView",
-          "name": "Commiter",
-          "when": "true"
-        }
-      ]
-    },
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "commiter",
-          "title": "Commiter",
-          "icon": "$(git-commit)"
-        }
-      ]
-    }
+    ]
   },
   "dependencies": {
-    "@types/node": "^18.0.0",
     "openai": "^4.0.0"
   },
   "devDependencies": {
+    "@types/node": "^18.0.0",
     "@types/vscode": "^1.50.0",
     "typescript": "^5.2.2",
     "@vscode/vsce": "^2.0.0"
