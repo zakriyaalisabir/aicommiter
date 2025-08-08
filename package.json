@@ -27,7 +27,8 @@
     ]
   },
   "dependencies": {
-    "@types/node": "^18.0.0"
+    "@types/node": "^18.0.0",
+    "openai": "^4.0.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.50.0",
