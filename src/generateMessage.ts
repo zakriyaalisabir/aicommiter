@@ -2,8 +2,16 @@ import { spawnSync } from 'child_process';
 import OpenAI from 'openai';
 
 function getGitDiff(): string {
-  const vscode = require('vscode');
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  let workspaceFolder: string | undefined;
+  
+  // Try to get VS Code workspace if available
+  try {
+    const vscode = require('vscode');
+    workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  } catch {
+    // Running in CLI context, use current directory
+    workspaceFolder = process.cwd();
+  }
   
   const diffResult = spawnSync('git', ['diff', '--cached'], { 
     encoding: 'utf8',
