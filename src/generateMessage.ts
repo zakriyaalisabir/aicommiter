@@ -46,10 +46,10 @@ ${diff}`
       maxRetries: 3,
     }
     const response = await openai.chat.completions.create(body, options);
-    console.log('OpenAI response:', JSON.stringify(response));
+    // console.log('OpenAI response:', JSON.stringify(response));
 
     const content = response.choices[0]?.message?.content?.trim();
-    console.log('OpenAI API response object:', JSON.stringify(response, null, 2));
+    // console.log('OpenAI API response object:', JSON.stringify(content, null, 2));
 
     if (!content || content === '') {
       console.log('Empty content received, using fallback');
