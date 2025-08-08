@@ -2,6 +2,7 @@
 import { spawnSync } from 'child_process';
 import { generateCommitMessage, generateCommitMessageSync } from './generateMessage';
 import * as readline from 'readline';
+import { getApiKey, getModel, setApiKey, setModel } from './config';
 
 /**
  * Parse command line arguments for our CLI. Returns an options object.
@@ -83,12 +84,25 @@ async function run(): Promise<void> {
 
   let message = options.message;
   if (!message) {
-    const apiKey = await prompt('Enter OpenAI API Key: ');
-    const model = await prompt('Enter model (gpt-4o-mini/gpt-4o/gpt-3.5-turbo): ') || 'gpt-4o-mini';
+    let apiKey = getApiKey();
+    if (!apiKey) {
+      apiKey = await prompt('Enter OpenAI API Key (will be saved): ');
+      if (apiKey) setApiKey(apiKey);
+    }
     
-    try {
-      message = await generateCommitMessage(apiKey, model);
-    } catch {
+    let model = getModel();
+    if (!model) {
+      model = await prompt('Enter model (gpt-4o-mini/gpt-4o/gpt-3.5-turbo): ') || 'gpt-4o-mini';
+      setModel(model);
+    }
+    
+    if (apiKey) {
+      try {
+        message = await generateCommitMessage(apiKey, model!);
+      } catch {
+        message = generateCommitMessageSync();
+      }
+    } else {
       message = generateCommitMessageSync();
     }
   }

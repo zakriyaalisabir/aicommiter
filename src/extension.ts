@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { spawn } from 'child_process';
 import { generateCommitMessage, generateCommitMessageSync } from './generateMessage';
+import { getApiKey, getModel, setApiKey, setModel, showConfig } from './config';
 
 function runCommand(cmd: string, args: string[]): Promise<{ code: number | null }> {
   return new Promise((resolve, reject) => {
@@ -38,18 +39,28 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
-    const apiKey = await vscode.window.showInputBox({
-      prompt: 'Enter OpenAI API Key',
-      password: true
-    });
-    if (!apiKey) return;
+    let apiKey = getApiKey();
+    if (!apiKey) {
+      apiKey = await vscode.window.showInputBox({
+        prompt: 'Enter OpenAI API Key (will be saved)',
+        password: true
+      });
+      if (!apiKey) return;
+      setApiKey(apiKey);
+    }
 
-    const model = await vscode.window.showQuickPick([
-      'gpt-4o-mini',
-      'gpt-4o', 
-      'gpt-3.5-turbo'
-    ], { placeHolder: 'Select OpenAI model' });
-    if (!model) return;
+    let model = getModel();
+    if (!model || model === 'gpt-4o-mini') {
+      const selectedModel = await vscode.window.showQuickPick([
+        'gpt-4o-mini',
+        'gpt-4o', 
+        'gpt-3.5-turbo'
+      ], { placeHolder: `Select OpenAI model (current: ${model})` });
+      if (selectedModel && selectedModel !== model) {
+        model = selectedModel;
+        setModel(model);
+      }
+    }
 
     vscode.window.showInformationMessage('Generating commit message...');
     
