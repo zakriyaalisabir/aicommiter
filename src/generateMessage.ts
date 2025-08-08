@@ -1,80 +1,51 @@
-import { execSync, spawnSync } from 'child_process';
+import { spawnSync } from 'child_process';
+import OpenAI from 'openai';
 
-/**
- * Helper function to trim and split output lines safely.
- */
-function getLines(output: Buffer | string): string[] {
-  return output
-    .toString()
-    .trim()
-    .split(/\r?\n/)
-    .filter((line) => line.length > 0);
+function getGitDiff(): string {
+  const diffResult = spawnSync('git', ['diff', '--cached'], { encoding: 'utf8' });
+  return diffResult.stdout || '';
 }
 
-/**
- * Generate a commit message based on the current staged changes.
- *
- * The message is built from the statuses of each file. For example, if a file
- * is added (A), it will appear under the "Added" section. Modified (M),
- * Deleted (D), Renamed (R) and others are handled similarly. Up to
- * maxFiles are listed in the message; additional files are summarized by count.
- *
- * @param maxFiles Maximum number of file names to include in the message.
- * @returns A commit message string.
- */
-export function generateCommitMessage(maxFiles = 5): string {
+export async function generateCommitMessage(apiKey: string, model: string): Promise<string> {
   try {
-    // Check for staged changes. Use --name-status to get short status codes.
-    const diffResult = spawnSync('git', ['diff', '--cached', '--name-status'], {
-      encoding: 'utf8'
-    });
-    if (diffResult.error) {
-      throw diffResult.error;
-    }
-    const lines = getLines(diffResult.stdout);
-    if (lines.length === 0) {
-      // No staged changes; attempt to determine overall status.
+    const diff = getGitDiff();
+    if (!diff.trim()) {
       return 'chore: no staged changes';
     }
 
-    // Categorize file changes by status letter.
-    const categories: Record<string, string[]> = {};
-    for (const line of lines) {
-      // line format: "<status>\t<file>"; status can include multiple letters (e.g. "R100" for renamed with similarity index)
-      const [statusCode, ...fileParts] = line.split(/\s+/);
-      const fileName = fileParts.join(' ').trim();
-      if (!statusCode || !fileName) continue;
-      const status = statusCode[0]; // first character
-      const key = status;
-      if (!categories[key]) categories[key] = [];
-      categories[key].push(fileName);
-    }
+    const openai = new OpenAI({ apiKey });
+    const response = await openai.chat.completions.create({
+      model,
+      messages: [{
+        role: 'user',
+        content: `Generate a conventional commit message for this git diff. Use format: type(scope): description
 
-    const statusLabels: Record<string, string> = {
-      A: 'added',
-      M: 'modified',
-      D: 'deleted',
-      R: 'renamed',
-      C: 'copied',
-      U: 'updated'
-    };
+Types: feat, fix, docs, style, refactor, test, chore
 
-    let summaryParts: string[] = [];
-    for (const status of Object.keys(categories)) {
-      const files = categories[status];
-      const label = statusLabels[status] || 'changed';
-      const displayFiles = files.slice(0, maxFiles);
-      let part = `${label} ${displayFiles.join(', ')}`;
-      if (files.length > maxFiles) {
-        const remaining = files.length - maxFiles;
-        part += ` and ${remaining} more`;
-      }
-      summaryParts.push(part);
-    }
+Git diff:
+${diff}`
+      }],
+      max_tokens: 100,
+      temperature: 0.3
+    });
 
-    const message = `chore: ${summaryParts.join('; ')}`;
-    return message;
-  } catch (err: any) {
-    return `chore: auto commit`;
+    return response.choices[0]?.message?.content?.trim() || 'chore: auto commit';
+  } catch (err) {
+    return 'chore: auto commit';
   }
+}
+
+export function generateCommitMessageSync(): string {
+  const diffResult = spawnSync('git', ['diff', '--cached', '--name-status'], { encoding: 'utf8' });
+  const lines = diffResult.stdout.trim().split('\n').filter(l => l);
+  if (!lines.length) return 'chore: no staged changes';
+  
+  const hasNew = lines.some(l => l.startsWith('A'));
+  const hasModified = lines.some(l => l.startsWith('M'));
+  const hasDeleted = lines.some(l => l.startsWith('D'));
+  
+  if (hasNew && !hasModified && !hasDeleted) return 'feat: add new files';
+  if (hasModified && !hasNew && !hasDeleted) return 'fix: update existing files';
+  if (hasDeleted && !hasNew && !hasModified) return 'chore: remove files';
+  return 'chore: update files';
 }

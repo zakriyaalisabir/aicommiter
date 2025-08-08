@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'child_process';
-import { generateCommitMessage } from './generateMessage';
+import { generateCommitMessage, generateCommitMessageSync } from './generateMessage';
+import * as readline from 'readline';
 
 /**
  * Parse command line arguments for our CLI. Returns an options object.
@@ -14,7 +15,7 @@ function parseArgs(): {
   const args = process.argv.slice(2);
   let message: string | undefined;
   let maxFiles = 5;
-  let addAll = true;
+  let addAll = false;
   let push = false;
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -28,8 +29,8 @@ function parseArgs(): {
         maxFiles = parseInt(args[i + 1], 10) || maxFiles;
         i++;
         break;
-      case '--no-add':
-        addAll = false;
+      case '--add':
+        addAll = true;
         break;
       case '--push':
         push = true;
@@ -48,32 +49,59 @@ function printHelp() {
     `Options:\n` +
     `  -m, --message <msg>    Specify a custom commit message\n` +
     `  --max-files <n>        Maximum number of file names to include in the auto-generated message (default 5)\n` +
-    `  --no-add               Do not automatically stage all changes (default stages all)\n` +
+    `  --add                  Stage all changes before committing\n` +
     `  --push                 Push the commit to the current branch after committing\n` +
     `  -h, --help             Show this help message\n`);
 }
 
-function run(): void {
+function prompt(question: string): Promise<string> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise(resolve => rl.question(question, answer => { rl.close(); resolve(answer); }));
+}
+
+function hasStagedFiles(): boolean {
+  const result = spawnSync('git', ['diff', '--cached', '--quiet']);
+  return result.status !== 0;
+}
+
+async function run(): Promise<void> {
   const options = parseArgs();
-  // Stage all changes unless disabled
+  
   if (options.addAll) {
     const add = spawnSync('git', ['add', '-A'], { stdio: 'inherit' });
-    if (add.status !== 0) {
-      process.exit(add.status || 1);
+    if (add.status !== 0) process.exit(add.status || 1);
+  } else if (!hasStagedFiles()) {
+    const choice = await prompt('No staged files. Stage all changes? (y/n): ');
+    if (choice.toLowerCase() === 'y') {
+      const add = spawnSync('git', ['add', '-A'], { stdio: 'inherit' });
+      if (add.status !== 0) process.exit(add.status || 1);
+    } else {
+      console.log('Please stage files manually first.');
+      process.exit(0);
     }
   }
-  const message = options.message || generateCommitMessage(options.maxFiles);
-  if (!message || message.trim().length === 0) {
+
+  let message = options.message;
+  if (!message) {
+    const apiKey = await prompt('Enter OpenAI API Key: ');
+    const model = await prompt('Enter model (gpt-4o-mini/gpt-4o/gpt-3.5-turbo): ') || 'gpt-4o-mini';
+    
+    try {
+      message = await generateCommitMessage(apiKey, model);
+    } catch {
+      message = generateCommitMessageSync();
+    }
+  }
+
+  if (!message?.trim()) {
     console.error('Unable to determine commit message.');
     process.exit(1);
   }
+
   const commit = spawnSync('git', ['commit', '-m', message], { stdio: 'inherit' });
-  if (commit.status !== 0) {
-    // If commit fails (e.g. nothing to commit), exit with its code
-    process.exit(commit.status || 1);
-  }
+  if (commit.status !== 0) process.exit(commit.status || 1);
+
   if (options.push) {
-    // Determine current branch
     const branchResult = spawnSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8' });
     const branchName = branchResult.stdout.trim();
     if (!branchName) {
@@ -85,4 +113,4 @@ function run(): void {
   }
 }
 
-run();
+run().catch(console.error);
