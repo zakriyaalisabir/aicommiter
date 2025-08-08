@@ -15,8 +15,16 @@ function runCommand(cmd: string, args: string[]): Promise<{ code: number | null 
 async function hasStagedFiles(): Promise<boolean> {
   return new Promise((resolve) => {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    console.log('Checking staged files in:', workspaceFolder);
     const child = spawn('git', ['diff', '--cached', '--quiet'], { cwd: workspaceFolder });
-    child.on('close', (code) => resolve(code !== 0));
+    child.on('close', (code) => {
+      console.log('hasStagedFiles exit code:', code);
+      resolve(code !== 0);
+    });
+    child.on('error', (err) => {
+      console.log('hasStagedFiles error:', err);
+      resolve(false);
+    });
   });
 }
 
@@ -26,7 +34,15 @@ async function getStagedFilesList(): Promise<string[]> {
     const child = spawn('git', ['diff', '--cached', '--name-only'], { cwd: workspaceFolder });
     let output = '';
     child.stdout.on('data', (data) => output += data);
-    child.on('close', () => resolve(output.trim().split('\n').filter(f => f)));
+    child.on('close', () => {
+      const files = output.trim().split('\n').filter(f => f);
+      console.log('Staged files found:', files);
+      resolve(files);
+    });
+    child.on('error', (err) => {
+      console.log('getStagedFilesList error:', err);
+      resolve([]);
+    });
   });
 }
 
