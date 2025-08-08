@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { spawn } from 'child_process';
 import { generateCommitMessage, generateCommitMessageSync } from './generateMessage';
-import { getApiKey, getModel, setApiKey, setModel, showConfig } from './config';
+import { getApiKey, getModel, setApiKey, setModel, showConfig, getMaxTokens, setMaxTokens } from './config';
 
 function runCommand(cmd: string, args: string[]): Promise<{ code: number | null }> {
   return new Promise((resolve, reject) => {
@@ -20,8 +20,18 @@ async function hasStagedFiles(): Promise<boolean> {
   });
 }
 
+async function getStagedFilesList(): Promise<string[]> {
+  return new Promise((resolve) => {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const child = spawn('git', ['diff', '--cached', '--name-only'], { cwd: workspaceFolder });
+    let output = '';
+    child.stdout.on('data', (data) => output += data);
+    child.on('close', () => resolve(output.trim().split('\n').filter(f => f)));
+  });
+}
+
 export function activate(context: vscode.ExtensionContext) {
-  const disposable = vscode.commands.registerCommand('commiter.generateCommit', async () => {
+  const generateCommitDisposable = vscode.commands.registerCommand('commiter.generateCommit', async () => {
     if (!(await hasStagedFiles())) {
       const choice = await vscode.window.showQuickPick([
         'Stage all changes and commit',
@@ -39,6 +49,12 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
+    const stagedFiles = await getStagedFilesList();
+    const filesConfirm = await vscode.window.showQuickPick(['Yes', 'No'], {
+      placeHolder: `OK with staged files: ${stagedFiles.join(', ')}?`
+    });
+    if (filesConfirm !== 'Yes') return;
+
     let apiKey = getApiKey();
     if (!apiKey) {
       apiKey = await vscode.window.showInputBox({
@@ -50,23 +66,32 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     let model = getModel();
-    if (!model || model === 'gpt-4o-mini') {
-      const selectedModel = await vscode.window.showQuickPick([
+    if (!model) {
+      model = await vscode.window.showQuickPick([
         'gpt-4o-mini',
         'gpt-4o', 
         'gpt-3.5-turbo'
-      ], { placeHolder: `Select OpenAI model (current: ${model})` });
-      if (selectedModel && selectedModel !== model) {
-        model = selectedModel;
-        setModel(model);
-      }
+      ], { placeHolder: 'Select OpenAI model' });
+      if (!model) return;
+      setModel(model);
     }
 
-    vscode.window.showInformationMessage('Generating commit message...');
+    let maxTokens = getMaxTokens();
+    if (!maxTokens) {
+      const tokensInput = await vscode.window.showInputBox({
+        prompt: 'Enter max tokens for commit message (e.g., 150)',
+        value: '150'
+      });
+      if (!tokensInput) return;
+      maxTokens = parseInt(tokensInput) || 150;
+      setMaxTokens(maxTokens);
+    }
+
+    vscode.window.showInformationMessage(`Generating commit using ${model}...`);
     
     let defaultMessage: string;
     try {
-      defaultMessage = await generateCommitMessage(apiKey, model);
+      defaultMessage = await generateCommitMessage(apiKey, model, maxTokens);
     } catch {
       defaultMessage = generateCommitMessageSync();
     }
@@ -77,6 +102,11 @@ export function activate(context: vscode.ExtensionContext) {
     });
     if (!userMessage?.trim()) return;
 
+    const confirm = await vscode.window.showQuickPick(['Yes', 'No'], {
+      placeHolder: `Commit with message: "${userMessage.trim()}"?`
+    });
+    if (confirm !== 'Yes') return;
+
     const commitResult = await runCommand('git', ['commit', '-m', userMessage.trim()]);
     if (commitResult.code === 0) {
       vscode.window.showInformationMessage('Commit created successfully.');
@@ -84,7 +114,12 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showErrorMessage('Git commit failed.');
     }
   });
-  context.subscriptions.push(disposable);
+  
+  const showConfigDisposable = vscode.commands.registerCommand('commiter.showConfig', () => {
+    vscode.window.showInformationMessage(showConfig());
+  });
+  
+  context.subscriptions.push(generateCommitDisposable, showConfigDisposable);
 }
 
 export function deactivate() {}

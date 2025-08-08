@@ -11,18 +11,28 @@
     "build": "npm run compile",
     "watch": "tsc -w -p ."
   },
-  "publisher": "anonymous",
+  "publisher": "zakriyaalisabir",
+  "author": "Zakriya Ali Sabir",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
   "engines": {
     "vscode": "^1.50.0"
   },
   "activationEvents": [
-    "onCommand:commiter.generateCommit"
+    "onCommand:commiter.generateCommit",
+    "onCommand:commiter.showConfig"
   ],
   "contributes": {
     "commands": [
       {
         "command": "commiter.generateCommit",
         "title": "Commiter: Generate Git Commit"
+      },
+      {
+        "command": "commiter.showConfig",
+        "title": "Commiter: Show Config"
       }
     ]
   },
@@ -35,6 +45,5 @@
     "typescript": "^5.2.2"
   },
   "keywords": [],
-  "author": "",
   "license": "ISC"
 }

@@ -7,6 +7,7 @@ const CONFIG_FILE = path.join(os.homedir(), '.commiter-config.json');
 interface Config {
   apiKey?: string;
   model?: string;
+  maxTokens?: number;
 }
 
 export function loadConfig(): Config {
@@ -29,7 +30,7 @@ export function getApiKey(): string | undefined {
 }
 
 export function getModel(): string | undefined {
-  return loadConfig().model || 'gpt-4o-mini';
+  return loadConfig().model;
 }
 
 export function setApiKey(apiKey: string): void {
@@ -46,5 +47,15 @@ export function setModel(model: string): void {
 
 export function showConfig(): string {
   const config = loadConfig();
-  return `API Key: ${config.apiKey ? '***' + config.apiKey.slice(-4) : 'Not set'}\nModel: ${config.model || 'Not set'}`;
+  return `API Key: ${config.apiKey ? '***' + config.apiKey.slice(-4) : 'Not set'}\nModel: ${config.model || 'Not set'}\nMax Tokens: ${config.maxTokens || 'Not set'}`;
+}
+
+export function getMaxTokens(): number | undefined {
+  return loadConfig().maxTokens;
+}
+
+export function setMaxTokens(maxTokens: number): void {
+  const config = loadConfig();
+  config.maxTokens = maxTokens;
+  saveConfig(config);
 }
