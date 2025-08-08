@@ -30,57 +30,34 @@ async function getStagedFilesList(): Promise<string[]> {
   });
 }
 
-class CommiterViewProvider implements vscode.WebviewViewProvider {
-  resolveWebviewView(webviewView: vscode.WebviewView) {
-    webviewView.webview.options = { enableScripts: true };
-    webviewView.webview.html = this.getHtmlContent();
-    
-    webviewView.webview.onDidReceiveMessage(message => {
-      vscode.commands.executeCommand(`commiter.${message.command}`);
-    });
+class CommiterItem extends vscode.TreeItem {
+  constructor(label: string, command: string) {
+    super(label, vscode.TreeItemCollapsibleState.None);
+    this.command = {
+      command: `commiter.${command}`,
+      title: label
+    };
+  }
+}
+
+class CommiterTreeProvider implements vscode.TreeDataProvider<CommiterItem> {
+  getTreeItem(element: CommiterItem): vscode.TreeItem {
+    return element;
   }
 
-  private getHtmlContent(): string {
-    return `<!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: var(--vscode-font-family); padding: 10px; }
-        button { 
-          background: var(--vscode-button-background); 
-          color: var(--vscode-button-foreground); 
-          border: none; 
-          padding: 8px 16px; 
-          margin: 5px 0; 
-          cursor: pointer; 
-          width: 100%; 
-          border-radius: 2px;
-        }
-        button:hover { background: var(--vscode-button-hoverBackground); }
-      </style>
-    </head>
-    <body>
-      <h3>Commiter</h3>
-      <button onclick="generateCommit()">🚀 Generate Commit</button>
-      <button onclick="showConfig()">⚙️ Show Config</button>
-      <button onclick="configure()">🔧 Configure</button>
-      <script>
-        const vscode = acquireVsCodeApi();
-        function generateCommit() { vscode.postMessage({command:'generateCommit'}); }
-        function showConfig() { vscode.postMessage({command:'showConfig'}); }
-        function configure() { vscode.postMessage({command:'configure'}); }
-      </script>
-    </body>
-    </html>`;
+  getChildren(): CommiterItem[] {
+    return [
+      new CommiterItem('🚀 Generate Commit', 'generateCommit'),
+      new CommiterItem('⚙️ Show Config', 'showConfig'),
+      new CommiterItem('🔧 Configure', 'configure')
+    ];
   }
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  const provider = new CommiterViewProvider();
+  const treeProvider = new CommiterTreeProvider();
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider('commiterView', provider, {
-      webviewOptions: { retainContextWhenHidden: true }
-    })
+    vscode.window.createTreeView('commiterView', { treeDataProvider: treeProvider })
   );
 
   const generateCommitDisposable = vscode.commands.registerCommand('commiter.generateCommit', async () => {

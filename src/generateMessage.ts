@@ -56,7 +56,7 @@ ${diff}`
       return generateCommitMessageSync();
     }
 
-    console.log('OpenAI generated message:', content);
+    // console.log('OpenAI generated message:', content);
     return content;
   } catch (err) {
     console.error('OpenAI API error:', err);
