@@ -164,9 +164,9 @@ async function generateCommit(options: any): Promise<void> {
         
         if (result.usage) {
           const { logJob } = await import('./jobTracker');
-          const cachedTokens = result.usage.prompt_tokens_details?.cached_tokens || 
-                              result.usage.cached_tokens || 
-                              result.usage.prompt_cache_hit_tokens || 0;
+          
+          const cachedTokens = result.usage.prompt_tokens_details?.cached_tokens || 0;
+          const reasoningTokens = result.usage.completion_tokens_details?.reasoning_tokens || 0;
           
           await logJob(
             'commit-generation',
@@ -180,8 +180,9 @@ async function generateCommit(options: any): Promise<void> {
           console.log(chalk.gray('\n📊 Token Usage:'));
           console.log(chalk.gray(`   Input: ${result.usage.prompt_tokens || 0}`));
           console.log(chalk.gray(`   Output: ${result.usage.completion_tokens || 0}`));
-          if (cachedTokens) {
-            console.log(chalk.gray(`   Cached: ${cachedTokens}`));
+          console.log(chalk.gray(`   Cached: ${cachedTokens}`));
+          if (reasoningTokens > 0) {
+            console.log(chalk.gray(`   Reasoning: ${reasoningTokens}`));
           }
           console.log(chalk.gray(`   Total: ${result.usage.total_tokens || 0}`));
         }
