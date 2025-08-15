@@ -12,11 +12,12 @@ A VS Code extension and CLI tool that generates intelligent git commit messages 
 ## ✨ Features
 
 - 🤖 **AI-Generated Commits** - Uses OpenAI GPT to analyze git diffs and generate conventional commit messages
-- 🎯 **VS Code Integration** - Sidebar panel with one-click commit generation
-- 💻 **CLI Tool** - Use from terminal with various options
-- 🔧 **Smart Configuration** - Stores API key, model, and token settings
+- 🎯 **VS Code Integration** - Command palette integration with one-click commit generation
+- 💻 **Enhanced CLI Tool** - Beautiful colored output with spinners and progress indicators
+- 🔧 **Advanced Configuration** - Comprehensive settings for API, models, costs, and parameters
 - 📋 **Staged Files Control** - Only commits pre-staged files with user confirmation
-- 🎨 **Beautiful Logging** - Formatted console output with progress indicators
+- 📊 **Token Usage Tracking** - Real-time display of input, output, cached, and reasoning tokens
+- 💰 **Cost Tracking** - Automatic job logging with configurable token costs
 - ⚡ **Multiple Models** - Supports GPT-4o, GPT-4o-mini, GPT-3.5-turbo, and GPT-5-nano
 
 ## 🚀 Installation
@@ -79,19 +80,37 @@ commiter --add
 commiter --push
 
 # Show current configuration
-commiter --config
+commiter configure --show
+commiter configure -o
 
 # Configure settings interactively
-commiter --configure
+commiter configure
+
+# Show usage history and statistics
+commiter usage
+commiter usage --limit 20
 ```
 
 ## ⚙️ Configuration
 
-### First Time Setup
-The tool will prompt you to configure:
+### Comprehensive Setup
+Run `commiter configure` to set up:
+
+**API Settings:**
 - **OpenAI API Key** - Your OpenAI API key
 - **Model** - Choose from gpt-4o-mini, gpt-4o, gpt-3.5-turbo, gpt-5-nano
 - **Max Tokens** - Token limit for generated messages (default: 150)
+
+**Cost Tracking:**
+- **Input Token Cost** - Cost per 1M input tokens (default: 0.15)
+- **Output Token Cost** - Cost per 1M output tokens (default: 0.6)
+- **Cached Token Cost** - Cost per 1M cached tokens (default: 0.075)
+
+**Model Parameters:**
+- **Service Tier** - OpenAI service tier (e.g., 'flex')
+- **Reasoning Effort** - For reasoning models (e.g., 'low', 'medium', 'high')
+- **Temperature** - Creativity level (0.0-2.0)
+- **Verbosity** - Response verbosity level
 
 Settings are saved to `~/.commiter-config.json`
 
@@ -110,30 +129,34 @@ Settings are saved to `~/.commiter-config.json`
 5. **Edit if needed** - Modify the generated message
 6. **Confirm commit** - Final approval before committing
 
-## 📊 Console Output
+## 📊 Enhanced CLI Output
 
-Beautiful formatted logging shows:
+Beautiful colored output with spinners:
 
 ```
-════════════════════════════════════════════════════════════
+🚀 AI Commiter
 
-🔹 OpenAI API Request
-────────────────────────────────────────
-ℹ️  Model: gpt-4o-mini
-ℹ️  Max Tokens: 150
-ℹ️  Sending request to OpenAI...
+📁 Staged files:
+   1. src/auth.js
+   2. src/config.js
+   3. package.json
+OK with these staged files? (Y/n): 
+⠋ Generating commit message using gpt-5-nano...
+✔ Commit message generated
 
-🔹 OpenAI API Response
-────────────────────────────────────────
-ℹ️  Prompt tokens: 248
-ℹ️  Completion tokens: 25
-ℹ️  Total tokens: 273
+📊 Token Usage:
+   Input: 423
+   Output: 217
+   Cached: 0
+   Reasoning: 192
+   Total: 640
 
-🔹 Generated Commit Message
-────────────────────────────────────────
-✅ "feat(auth): add user authentication system"
+💬 Commit message: "feat(auth): add user authentication system"
+Proceed with commit? (Y/n): 
+⠋ Creating commit...
+✔ Commit created successfully
 
-════════════════════════════════════════════════════════════
+✅ Done!
 ```
 
 ## 🛠️ CLI Options
@@ -147,9 +170,42 @@ Beautiful formatted logging shows:
 | `--configure` | Interactive configuration setup |
 | `-h, --help` | Show help message |
 
+## 📈 Usage Tracking
+
+Automatic job logging tracks:
+- **Token Usage** - Input, output, cached, and reasoning tokens
+- **Cost Calculation** - Based on your configured token costs
+- **Model Performance** - Track usage across different models
+- **History** - All jobs saved to `~/.commiter-jobs.json`
+
+### View Usage History
+```bash
+commiter usage          # Show last 10 jobs
+commiter usage --limit 20   # Show last 20 jobs
+```
+
+**Sample Output:**
+```
+📈 Usage History
+
+┌─────────┬────────────────────┬─────────────────────┬────────────────────────────┬─────────────┬──────────────┬──────────────┬─────────────┬─────────────────────────┬──────────────┐
+│ (index) │ id                 │ name                │ timestamp                  │ inputTokens │ outputTokens │ cachedTokens │ totalTokens │ cost                    │ model        │
+├─────────┼────────────────────┼─────────────────────┼────────────────────────────┼─────────────┼──────────────┼──────────────┼─────────────┼─────────────────────────┼──────────────┤
+│ 0       │ '9d86c2749f24bd87' │ 'commit-generation' │ '2025-08-15T17:27:27.645Z' │ 708         │ 235          │ 0            │ 943         │ 0.0000647               │ 'gpt-5-nano' │
+│ 1       │ 'f8204931a75940f6' │ 'commit-generation' │ '2025-08-15T17:25:55.970Z' │ 423         │ 157          │ 0            │ 580         │ 0.000041975             │ 'gpt-5-nano' │
+│ 2       │ 'd30693ab15e1a30e' │ 'commit-generation' │ '2025-08-15T17:21:40.296Z' │ 423         │ 217          │ 0            │ 640         │ 0.000053975             │ 'gpt-5-nano' │
+└─────────┴────────────────────┴─────────────────────┴────────────────────────────┴─────────────┴──────────────┴──────────────┴─────────────┴─────────────────────────┴──────────────┘
+
+📊 Summary
+Total Jobs: 9
+Total Cost: $0.0007
+Total Tokens: 17555
+```
+
 ## 🔒 Security
 
 - API keys are stored locally in `~/.commiter-config.json`
+- Job history stored locally in `~/.commiter-jobs.json`
 - Only staged files are analyzed and committed
 - User confirmation required at each step
 - No data sent to external services except OpenAI API

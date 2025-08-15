@@ -283,6 +283,50 @@ program
     }
   });
 
+program
+  .command('usage')
+  .description('Show usage history and statistics')
+  .option('--limit <n>', 'Number of recent jobs to show', '10')
+  .action(async (options) => {
+    const { getJobLogs } = await import('./jobTracker');
+    const jobs = await getJobLogs();
+
+    if (jobs.length === 0) {
+      console.log(chalk.yellow('\n⚠️  No usage history found\n'));
+      return;
+    }
+
+    const limit = parseInt(options.limit) || 10;
+    const recentJobs = jobs.slice(-limit).reverse();
+
+    console.log(chalk.blue.bold('\n📈 Usage History\n'));
+
+    // Table header
+    console.table(recentJobs)
+
+    let totalCost = 0;
+    let totalTokens = 0;
+
+    recentJobs.forEach((job, index) => {
+      const date = new Date(job.timestamp).toLocaleDateString();
+      const model = (job.model || 'unknown').substring(0, 10);
+      const input = job.inputTokens.toString();
+      const output = job.outputTokens.toString();
+      const cached = (job.cachedTokens || 0).toString();
+      const cost = '$' + job.cost.toFixed(4);
+
+      totalCost += job.cost;
+      totalTokens += job.totalTokens;
+    });
+
+    console.log()
+    console.log(chalk.blue.bold('📊 Summary'));
+    console.log(chalk.cyan(`Total Jobs: ${chalk.green(jobs.length)}`));
+    console.log(chalk.cyan(`Total Cost: ${chalk.green('$' + totalCost.toFixed(4))}`));
+    console.log(chalk.cyan(`Total Tokens: ${chalk.green(totalTokens)}`));
+    console.log();
+  });
+
 // Default action (when no command specified)
 program.action(generateCommit);
 
