@@ -16,23 +16,67 @@ function prompt(question: string): Promise<string> {
 
 async function configure(): Promise<void> {
   console.log(chalk.blue.bold('\n🔧 Configuration Setup\n'));
+  const { getConfig, setApiKey, setModel, setMaxTokens, setInputTokenCost, setOutputTokenCost, setCachedTokenCost, setServiceTier, setReasoningEffort, setTemperature, setVerbosity } = await import('./config');
+  const config = getConfig();
   
-  const apiKey = await prompt(chalk.cyan(`Enter OpenAI API Key (current: ${getApiKey() ? chalk.green('***' + getApiKey()!.slice(-4)) : chalk.red('Not set')}): `));
+  const apiKey = await prompt(chalk.cyan(`Enter OpenAI API Key (current: ${config.apiKey ? chalk.green('***' + config.apiKey.slice(-4)) : chalk.red('Not set')}): `));
   if (apiKey.trim()) {
     setApiKey(apiKey);
     console.log(chalk.green('✓ API key saved'));
   }
 
-  const model = await prompt(chalk.cyan(`Enter model (current: ${getModel() ? chalk.green(getModel()) : chalk.red('Not set')}): `));
+  const model = await prompt(chalk.cyan(`Enter model (current: ${config.model ? chalk.green(config.model) : chalk.red('Not set')}): `));
   if (model.trim()) {
     setModel(model);
     console.log(chalk.green('✓ Model saved'));
   }
 
-  const tokens = await prompt(chalk.cyan(`Enter max tokens (current: ${getMaxTokens() ? chalk.green(getMaxTokens()?.toString()) : chalk.red('Not set')}): `));
+  const tokens = await prompt(chalk.cyan(`Enter max tokens (current: ${config.maxTokens ? chalk.green(config.maxTokens.toString()) : chalk.red('Not set')}): `));
   if (tokens.trim()) {
     setMaxTokens(parseInt(tokens) || 150);
     console.log(chalk.green('✓ Max tokens saved'));
+  }
+
+  const inputCost = await prompt(chalk.cyan(`Enter input token cost per 1M (current: ${config.inputTokenCost ? chalk.green(config.inputTokenCost.toString()) : chalk.red('Not set')}): `));
+  if (inputCost.trim()) {
+    setInputTokenCost(parseFloat(inputCost) || 0.15);
+    console.log(chalk.green('✓ Input token cost saved'));
+  }
+
+  const outputCost = await prompt(chalk.cyan(`Enter output token cost per 1M (current: ${config.outputTokenCost ? chalk.green(config.outputTokenCost.toString()) : chalk.red('Not set')}): `));
+  if (outputCost.trim()) {
+    setOutputTokenCost(parseFloat(outputCost) || 0.6);
+    console.log(chalk.green('✓ Output token cost saved'));
+  }
+
+  const cachedCost = await prompt(chalk.cyan(`Enter cached token cost per 1M (current: ${config.cachedTokenCost ? chalk.green(config.cachedTokenCost.toString()) : chalk.red('Not set')}): `));
+  if (cachedCost.trim()) {
+    setCachedTokenCost(parseFloat(cachedCost) || 0.075);
+    console.log(chalk.green('✓ Cached token cost saved'));
+  }
+
+  const serviceTier = await prompt(chalk.cyan(`Enter service tier (current: ${config.serviceTier ? chalk.green(config.serviceTier) : chalk.red('Not set')}): `));
+  if (serviceTier.trim()) {
+    setServiceTier(serviceTier);
+    console.log(chalk.green('✓ Service tier saved'));
+  }
+
+  const reasoningEffort = await prompt(chalk.cyan(`Enter reasoning effort (current: ${config.reasoningEffort ? chalk.green(config.reasoningEffort) : chalk.red('Not set')}): `));
+  if (reasoningEffort.trim()) {
+    setReasoningEffort(reasoningEffort);
+    console.log(chalk.green('✓ Reasoning effort saved'));
+  }
+
+  const temperature = await prompt(chalk.cyan(`Enter temperature (current: ${config.temperature ? chalk.green(config.temperature.toString()) : chalk.red('Not set')}): `));
+  if (temperature.trim()) {
+    setTemperature(parseFloat(temperature) || 0.2);
+    console.log(chalk.green('✓ Temperature saved'));
+  }
+
+  const verbosity = await prompt(chalk.cyan(`Enter verbosity (current: ${config.verbosity ? chalk.green(config.verbosity) : chalk.red('Not set')}): `));
+  if (verbosity.trim()) {
+    setVerbosity(verbosity);
+    console.log(chalk.green('✓ Verbosity saved'));
   }
 
   console.log(chalk.green.bold('\n✅ Configuration updated!\n'));
@@ -119,12 +163,23 @@ async function generateCommit(options: any): Promise<void> {
         spinner.succeed('Commit message generated');
         
         if (result.usage) {
+          const { logJob } = await import('./jobTracker');
+          const cachedTokens = result.usage.prompt_tokens_details?.cached_tokens || 
+                              result.usage.cached_tokens || 
+                              result.usage.prompt_cache_hit_tokens || 0;
+          
+          await logJob(
+            'commit-generation',
+            result.usage.prompt_tokens || 0,
+            result.usage.completion_tokens || 0,
+            undefined,
+            model,
+            cachedTokens
+          );
+          
           console.log(chalk.gray('\n📊 Token Usage:'));
           console.log(chalk.gray(`   Input: ${result.usage.prompt_tokens || 0}`));
           console.log(chalk.gray(`   Output: ${result.usage.completion_tokens || 0}`));
-          const cachedTokens = result.usage.prompt_tokens_details?.cached_tokens || 
-                              result.usage.cached_tokens || 
-                              result.usage.prompt_cache_hit_tokens;
           if (cachedTokens) {
             console.log(chalk.gray(`   Cached: ${cachedTokens}`));
           }
@@ -183,7 +238,10 @@ async function generateCommit(options: any): Promise<void> {
 program
   .name('commiter')
   .description('AI-powered git commit message generator')
-  .version('1.2.0');
+  .version(require("../package.json").version)
+  .option('-m, --message <msg>', 'Custom commit message')
+  .option('--add', 'Stage all changes before committing')
+  .option('--push', 'Push after committing');
 
 program
   .command('commit')
@@ -195,20 +253,34 @@ program
   .action(generateCommit);
 
 program
-  .command('config')
-  .description('Show current configuration')
-  .action(() => {
-    console.log(chalk.blue.bold('\n📋 Current Configuration\n'));
-    const config = showConfig();
-    console.log(config.replace(/API Key: (.+)/, `API Key: ${chalk.green('$1')}`));
-    console.log();
-  });
-
-program
   .command('configure')
   .alias('setup')
-  .description('Configure API key, model, and max tokens')
-  .action(configure);
+  .description('Configure API key, model, tokens, and costs')
+  .option('--show', 'Show current configuration')
+  .option('-o', 'Show current configuration')
+  .action((options) => {
+    if (options.show || options.o) {
+      console.log(chalk.blue.bold('\n📋 Current Configuration\n'));
+      const { showConfig } = require('./config');
+      const config = showConfig();
+      const styledConfig = config
+        .replace(/API Key: (.+)/, `${chalk.cyan('API Key:')} ${chalk.green('$1')}`)
+        .replace(/Model: (.+)/, `${chalk.cyan('Model:')} ${chalk.green('$1')}`)
+        .replace(/Max Tokens: (.+)/, `${chalk.cyan('Max Tokens:')} ${chalk.green('$1')}`)
+        .replace(/Input Token Cost: (.+)/, `${chalk.cyan('Input Token Cost:')} ${chalk.green('$1')}`)
+        .replace(/Output Token Cost: (.+)/, `${chalk.cyan('Output Token Cost:')} ${chalk.green('$1')}`)
+        .replace(/Cached Token Cost: (.+)/, `${chalk.cyan('Cached Token Cost:')} ${chalk.green('$1')}`)
+        .replace(/Service Tier: (.+)/, `${chalk.cyan('Service Tier:')} ${chalk.green('$1')}`)
+        .replace(/Reasoning Effort: (.+)/, `${chalk.cyan('Reasoning Effort:')} ${chalk.green('$1')}`)
+        .replace(/Temperature: (.+)/, `${chalk.cyan('Temperature:')} ${chalk.green('$1')}`)
+        .replace(/Verbosity: (.+)/, `${chalk.cyan('Verbosity:')} ${chalk.green('$1')}`)
+        .replace(/Not set/g, chalk.red('Not set'));
+      console.log(styledConfig);
+      console.log();
+    } else {
+      configure();
+    }
+  });
 
 // Default action (when no command specified)
 program.action(generateCommit);

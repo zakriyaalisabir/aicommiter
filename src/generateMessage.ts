@@ -28,6 +28,9 @@ export async function generateCommitMessage(apiKey: string, model: string, maxTo
       return { message: 'chore: no staged changes' };
     }
 
+    const { getConfig } = require('./config');
+    const config = getConfig();
+    
     const openai = new OpenAI({ apiKey });
     const body: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
       model,
@@ -47,11 +50,23 @@ export async function generateCommitMessage(apiKey: string, model: string, maxTo
       prompt_cache_key: `ai-commiter-${model}`,
     }
 
+    if (config.serviceTier) {
+      (body as any).service_tier = config.serviceTier;
+    }
+    
+    if (config.reasoningEffort) {
+      (body as any).reasoning_effort = config.reasoningEffort;
+    }
+    
+    if (config.verbosity) {
+      (body as any).verbosity = config.verbosity;
+    }
+
     if (model.startsWith('gpt-5')) {
       delete body.max_tokens;
     }
 
-    if (model.startsWith('gpt-5-nano')) {
+    if (model.startsWith('gpt-5-nano') && !config.temperature) {
       body.temperature = 1;
     }
 
