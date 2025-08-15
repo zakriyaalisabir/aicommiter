@@ -18,7 +18,7 @@ async function configure(): Promise<void> {
   console.log(chalk.blue.bold('\n🔧 Configuration Setup\n'));
   const { getConfig, setApiKey, setModel, setMaxTokens, setInputTokenCost, setOutputTokenCost, setCachedTokenCost, setServiceTier, setReasoningEffort, setTemperature, setVerbosity } = await import('./config');
   const config = getConfig();
-  
+
   const apiKey = await prompt(chalk.cyan(`Enter OpenAI API Key (current: ${config.apiKey ? chalk.green('***' + config.apiKey.slice(-4)) : chalk.red('Not set')}): `));
   if (apiKey.trim()) {
     setApiKey(apiKey);
@@ -161,13 +161,13 @@ async function generateCommit(options: any): Promise<void> {
         const result = await generateCommitMessage(apiKey, model, maxTokens);
         message = result.message;
         spinner.succeed('Commit message generated');
-        
+
         if (result.usage) {
           const { logJob } = await import('./jobTracker');
-          
+
           const cachedTokens = result.usage.prompt_tokens_details?.cached_tokens || 0;
           const reasoningTokens = result.usage.completion_tokens_details?.reasoning_tokens || 0;
-          
+
           await logJob(
             'commit-generation',
             result.usage.prompt_tokens || 0,
@@ -176,15 +176,15 @@ async function generateCommit(options: any): Promise<void> {
             model,
             cachedTokens
           );
-          
+
           console.log(chalk.gray('\n📊 Token Usage:'));
-          console.log(chalk.gray(`   Input: ${result.usage.prompt_tokens || 0}`));
-          console.log(chalk.gray(`   Output: ${result.usage.completion_tokens || 0}`));
-          console.log(chalk.gray(`   Cached: ${cachedTokens}`));
+          console.log(chalk.gray(`   Input(I): ${result.usage.prompt_tokens || 0}`));
+          console.log(chalk.gray(`   Output(O): ${result.usage.completion_tokens || 0}`));
+          console.log(chalk.gray(`   Cached(C): ${cachedTokens}`));
           if (reasoningTokens > 0) {
-            console.log(chalk.gray(`   Reasoning: ${reasoningTokens}`));
+            console.log(chalk.gray(`   Reasoning(R): ${reasoningTokens}`));
           }
-          console.log(chalk.gray(`   Total: ${result.usage.total_tokens || 0}`));
+          console.log(chalk.gray(`   Total (I+O+C): ${result.usage.total_tokens || 0}`));
         }
       } catch (error) {
         spinner.fail('AI generation failed, using fallback');
