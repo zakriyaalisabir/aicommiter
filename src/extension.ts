@@ -108,7 +108,8 @@ export function activate(context: vscode.ExtensionContext) {
     
     let defaultMessage: string;
     try {
-      defaultMessage = await generateCommitMessage(apiKey, model, maxTokens);
+      const result = await generateCommitMessage(apiKey, model, maxTokens);
+      defaultMessage = result.message;
     } catch {
       defaultMessage = generateCommitMessageSync();
     }

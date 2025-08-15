@@ -8,7 +8,7 @@
   ],
   "main": "dist/extension.js",
   "bin": {
-    "commiter": "dist/cli.js"
+    "commiter": "dist/cli-enhanced.js"
   },
   "scripts": {
     "tag": "git tag v$(node getPkgVersion.js) && git push origin v$(node getPkgVersion.js)",
@@ -51,7 +51,10 @@
   },
   "dependencies": {
     "@vscode/vsce": "^3.6.0",
-    "openai": "^4.0.0"
+    "openai": "^5.12.2",
+    "chalk": "^5.5.0",
+    "commander": "^14.0.0",
+    "ora": "^8.2.0"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

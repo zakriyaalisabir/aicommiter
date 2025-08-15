@@ -137,7 +137,8 @@ async function run(): Promise<void> {
     if (apiKey && model) {
       console.log(`Generating commit using ${model}...`);
       try {
-        message = await generateCommitMessage(apiKey, model, maxTokens);
+        const result = await generateCommitMessage(apiKey, model, maxTokens);
+        message = result.message;
       } catch {
         message = generateCommitMessageSync();
       }
