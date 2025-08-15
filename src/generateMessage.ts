@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 
 function getGitDiff(): string {
   let workspaceFolder: string | undefined;
-  
+
   // Try to get VS Code workspace if available
   try {
     const vscode = require('vscode');
@@ -12,16 +12,16 @@ function getGitDiff(): string {
     // Running in CLI context, use current directory
     workspaceFolder = process.cwd();
   }
-  
-  const diffResult = spawnSync('git', ['diff', '--cached'], { 
+
+  const diffResult = spawnSync('git', ['diff', '--cached'], {
     encoding: 'utf8',
-    cwd: workspaceFolder 
+    cwd: workspaceFolder
   });
-  
+
   return diffResult.stdout || '';
 }
 
-export async function generateCommitMessage(apiKey: string, model: string, maxTokens: number = 150): Promise<{message: string, usage?: any}> {
+export async function generateCommitMessage(apiKey: string, model: string, maxTokens: number = 150): Promise<{ message: string, usage?: any }> {
   try {
     const diff = getGitDiff();
     if (!diff.trim()) {
@@ -30,7 +30,7 @@ export async function generateCommitMessage(apiKey: string, model: string, maxTo
 
     const { getConfig } = require('./config');
     const config = getConfig();
-    
+
     const openai = new OpenAI({ apiKey });
     const body: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
       model,
@@ -45,7 +45,7 @@ export async function generateCommitMessage(apiKey: string, model: string, maxTo
       max_completion_tokens: maxTokens,
       reasoning_effort: 'low',
       n: 1,
-      temperature: 0.2,
+      temperature: 1,
       service_tier: 'flex',
       prompt_cache_key: `ai-commiter-${model}`,
     }
@@ -53,11 +53,11 @@ export async function generateCommitMessage(apiKey: string, model: string, maxTo
     if (config.serviceTier) {
       (body as any).service_tier = config.serviceTier;
     }
-    
+
     if (config.reasoningEffort) {
       (body as any).reasoning_effort = config.reasoningEffort;
     }
-    
+
     if (config.verbosity) {
       (body as any).verbosity = config.verbosity;
     }
@@ -73,16 +73,17 @@ export async function generateCommitMessage(apiKey: string, model: string, maxTo
     const options: OpenAI.RequestOptions = {
       maxRetries: 3,
     }
-    
+
     const response = await openai.chat.completions.create(body, options);
     const content = response.choices[0]?.message?.content?.trim();
-    
+
     if (!content || content === '') {
       return { message: generateCommitMessageSync() };
     }
-    
+
     return { message: content, usage: response.usage };
   } catch (err) {
+    console.error('Error generating commit message:', err);
     return { message: 'chore: auto commit' };
   }
 }
