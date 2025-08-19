@@ -2,6 +2,8 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
+import figlet from "figlet";
+import { rainbow } from "gradient-string";
 import { spawnSync } from 'child_process';
 import { generateCommitMessage, generateCommitMessageSync } from './generateMessage';
 import * as readline from 'readline';
@@ -93,7 +95,10 @@ function getStagedFilesList(): string[] {
 }
 
 async function generateCommit(options: any): Promise<void> {
-  console.log(chalk.blue.bold('\n🚀 AI Commiter\n'));
+  const appName = 'AI Commiter';
+  const banner = figlet.textSync(appName, { font: "Catwalk" });
+  console.log(chalk.bold(rainbow.multiline(banner)));
+  console.log(chalk.blue.bold(`🚀 Generating Commit...\n`));
 
   if (options.add) {
     const spinner = ora('Staging all changes...').start();
