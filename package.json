@@ -16,7 +16,7 @@
     "build": "npm run compile",
     "watch": "tsc -w -p .",
     "package": "vsce package",
-    "publish": "vsce publish",
+    "vsce:publish": "vsce publish",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "publisher": "ZakriyaAliSabir",

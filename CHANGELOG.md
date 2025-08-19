@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2025-01-20
+
+### Fixed
+- **TypeScript Configuration** - Added `esModuleInterop` and `allowSyntheticDefaultImports` flags to resolve module import issues
+- **Build Compatibility** - Fixed figlet and other CommonJS module imports for better cross-platform compatibility
+
+### Technical
+- **Module Resolution** - Enhanced TypeScript configuration for better module interoperability
+- **Dependencies** - Updated to include figlet and gradient-string for enhanced CLI visuals
+
 ## [2.0.0] - 2025-01-20
 
 ### Added

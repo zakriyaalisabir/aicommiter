@@ -41,10 +41,10 @@ npm install -g .
 This installs both the CLI tool and VS Code extension from source.
 
 ### Manual VSIX Installation
-1. Download `commiter-1.0.0.vsix`
+1. Download `commiter-2.0.1.vsix`
 2. Open VS Code → Extensions (`Cmd+Shift+X`)
 3. Click "..." menu → "Install from VSIX..."
-4. Select the `commiter-1.0.0.vsix` file
+4. Select the `commiter-2.0.1.vsix` file
 5. **Restart VS Code** after installation
 6. Commands are available via Command Palette (`Cmd+Shift+P`)
 
