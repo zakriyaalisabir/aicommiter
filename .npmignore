@@ -1,0 +1,8 @@
+.github/*
+node_modules
+test
+*.log
+coverage
+example/
+scripts/
+aicommiter-*.vsix
